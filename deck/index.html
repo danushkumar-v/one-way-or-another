@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>one-way-or-another · the deck</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="vendor/fonts.css">
+<link rel="stylesheet" href="vendor/maplibre-gl.css">
+<script src="vendor/maplibre-gl.js"></script>
+<script src="data.js"></script>
+<style>
+:root{--dark:#0B1F33;--light:#F4F7F9;--ink:#14263A;--line:#DCE4EA;--teal:#0E8C7F;--amber:#F5A623;--red:#D9472B}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--dark);color:var(--light);overflow:hidden;
+  font-family:"Google Sans Flex","Google Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums}
+#map{position:absolute;inset:0}
+.maplibregl-canvas{outline:none}
+section{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .7s ease;display:flex}
+section.on{opacity:1}
+section.light{background:var(--light);color:var(--ink);flex-direction:column;justify-content:center;padding:6vh 7vw}
+h1{font-size:clamp(40px,5.6vw,92px);line-height:1.02;font-weight:700;letter-spacing:-.025em;margin:0 0 .3em;max-width:16ch}
+h2{font-size:clamp(30px,3.5vw,60px);line-height:1.05;font-weight:700;letter-spacing:-.02em;margin:0 0 .35em}
+p{font-size:clamp(16px,1.35vw,23px);line-height:1.45;margin:0 0 .8em;max-width:34ch;opacity:.9}
+.kicker{font-size:clamp(12px,.95vw,16px);letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--teal);margin-bottom:1.2em}
+.dark .kicker{color:#3fc3b4;color:var(--teal);filter:brightness(1.7)}
+.card{background:rgba(11,31,51,.74);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(220,228,234,.16);
+  border-radius:22px;box-shadow:0 18px 60px rgba(0,0,0,.45);padding:clamp(20px,2.2vw,38px);pointer-events:auto}
+.pos-l{position:absolute;left:4vw;bottom:9vh;max-width:min(40vw,640px)}
+.pos-tl{position:absolute;left:4vw;top:7vh;max-width:min(46vw,760px)}
+.pos-r{position:absolute;right:3vw;top:7vh;width:min(27vw,400px)}
+.hero-title{position:absolute;left:5vw;top:50%;transform:translateY(-50%)}
+.hero-title p{max-width:40ch;font-size:clamp(18px,1.6vw,27px)}
+.big{font-size:clamp(46px,5.4vw,96px);font-weight:700;letter-spacing:-.03em;line-height:1}
+.big.teal{color:var(--teal)} .dark .big.teal{filter:brightness(1.55)}
+.lbl{font-size:clamp(12px,.95vw,16px);opacity:.72;margin-top:.35em;max-width:22ch;line-height:1.3}
+.row{display:flex;gap:clamp(18px,2.6vw,48px);flex-wrap:wrap;margin-top:1.1em}
+.chip{display:inline-flex;align-items:center;gap:.5em;padding:.38em .85em;border-radius:999px;border:1px solid rgba(220,228,234,.28);
+  font-size:clamp(11px,.9vw,15px);font-weight:500;white-space:nowrap;background:rgba(11,31,51,.6)}
+.light .chip{background:#fff;border-color:var(--line);color:var(--ink)}
+.chip i{width:.7em;height:.7em;border-radius:50%;display:inline-block;background:var(--teal)}
+.chip.amber i{background:var(--amber)} .chip.red i{background:var(--red)} .chip.dim i{background:var(--line);opacity:.5}
+.chip.on{border-color:var(--amber);box-shadow:0 0 18px rgba(245,166,35,.35)} .chip.on.teal{border-color:var(--teal);box-shadow:0 0 18px rgba(14,140,127,.5)}
+.chips{display:flex;gap:.6em;flex-wrap:wrap;margin-top:1em}
+.legend div{display:flex;align-items:center;gap:.9em;margin:.7em 0;font-size:clamp(14px,1.15vw,19px)}
+.sw{width:54px;height:6px;border-radius:3px;background:var(--teal);position:relative;flex:none}
+.sw.flow::after{content:"";position:absolute;top:-1px;left:0;width:8px;height:8px;border-radius:50%;background:var(--light);box-shadow:0 0 8px var(--light);animation:fl 1.3s linear infinite}
+.sw.pulse{animation:pu 2.4s ease-in-out infinite;opacity:.6} .sw.off{background:var(--line);opacity:.22}
+@keyframes fl{from{left:0}to{left:46px}} @keyframes pu{50%{opacity:.25}}
+/* light scenes */
+.flowgrid{display:grid;grid-template-columns:1.15fr auto 1fr auto 1.15fr auto 1fr;gap:1.4vw;align-items:center;margin-top:2.5vh;max-width:1500px}
+.box{background:#fff;border:1px solid var(--line);border-radius:18px;padding:1.3vw 1.4vw}
+.box h3{margin:0 0 .6em;font-size:clamp(15px,1.25vw,21px);font-weight:700}
+.box li,.box div.it{font-size:clamp(12px,1vw,16.5px);line-height:1.5;list-style:none;display:flex;align-items:center;gap:.6em}
+.box ul{margin:0;padding:0}
+.box li i{width:.62em;height:.62em;border-radius:50%;background:var(--teal);flex:none} .box li.a i{background:var(--amber)} .box li.g i{background:var(--line)}
+.arrow{font-size:2vw;color:var(--line)} .note{font-size:clamp(11px,.85vw,14px);opacity:.62;margin-top:.7em;line-height:1.35}
+.bars{margin-top:2vh;max-width:1150px;width:100%}
+.bar{display:grid;grid-template-columns:minmax(200px,25%) 1fr 5.2em;align-items:center;gap:1.2vw;margin:.72vh 0;font-size:clamp(13px,1.15vw,19px)}
+.bar .t{height:clamp(14px,2.3vh,26px);background:var(--line);border-radius:6px;position:relative}
+.bar .t b{position:absolute;inset:0 auto 0 0;border-radius:6px;background:var(--ink);opacity:.34;width:0;transition:width 1.4s cubic-bezier(.2,.7,.2,1)}
+.bar.base .t b{background:var(--red);opacity:.85} .bar.win .t b{background:var(--teal);opacity:1} .bar.win{font-weight:700}
+.bar .v{text-align:right;font-weight:600}
+.split{display:flex;gap:5vw;align-items:flex-end;flex-wrap:wrap}
+table.lb{border-collapse:separate;border-spacing:0;width:100%;max-width:1500px;margin-top:2vh;background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;font-size:clamp(11.5px,.98vw,16px);line-height:1.42}
+table.lb th{text-align:left;padding:.8em 1.1em;font-size:.8em;letter-spacing:.1em;text-transform:uppercase;opacity:.6;border-bottom:1px solid var(--line)}
+table.lb td{padding:.9em 1.1em;vertical-align:top;border-bottom:1px solid var(--line)} table.lb tr:last-child td{border-bottom:0}
+table.lb td:nth-child(1){width:13%} table.lb td:nth-child(2){width:45%} table.lb td:nth-child(3){width:17%} table.lb td:nth-child(4){opacity:.7}
+table.lb .num{font-size:2.1em;font-weight:700;letter-spacing:-.02em} table.lb tr.win .num{color:var(--teal)} table.lb .sub{opacity:.7;font-size:.9em}
+table.lb tr.win td:first-child{box-shadow:inset 4px 0 0 var(--teal)}
+.bar.five{grid-template-columns:minmax(260px,40%) 1fr 5.2em}
+/* map chips */
+.mk{font-family:inherit;font-size:13px;font-weight:600;color:var(--light);background:rgba(11,31,51,.86);border:1px solid rgba(220,228,234,.3);border-radius:999px;padding:5px 11px;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.mk.amber{border-color:var(--amber);color:var(--amber)} .mk.red{border-color:var(--red);background:var(--red);color:#fff;font-size:17px;padding:6px 14px}
+.mk.teal{border-color:var(--teal)}
+.result{display:flex;align-items:center;gap:16px;margin:.6em 0}
+.result .L{width:74px;height:74px;border-radius:18px;background:var(--teal);display:grid;place-items:center;font-size:44px;font-weight:700;box-shadow:0 0 34px rgba(14,140,127,.7)}
+.kv{font-size:clamp(12px,.95vw,15.5px);line-height:1.5;opacity:.92;margin:.5em 0} .kv b{display:block;font-size:.78em;letter-spacing:.1em;text-transform:uppercase;opacity:.6;font-weight:600}
+.photo{width:100%;aspect-ratio:2/1;object-fit:cover;border-radius:12px;border:1px solid rgba(220,228,234,.2);margin-bottom:.8em;display:block}
+.conf{height:6px;border-radius:3px;background:rgba(220,228,234,.18);overflow:hidden;margin-top:6px} .conf b{display:block;height:100%;background:var(--teal);width:0;transition:width 1.2s}
+.fade{opacity:0;transform:translateY(10px);transition:opacity .6s,transform .6s} .fade.in{opacity:1;transform:none}
+#nav{position:absolute;left:50%;bottom:2.2vh;transform:translateX(-50%);display:flex;gap:7px;z-index:9}
+#nav i{width:26px;height:4px;border-radius:2px;background:rgba(220,228,234,.25);cursor:pointer;transition:background .3s} #nav i.on{background:var(--teal)}
+body.lightmode #nav i{background:rgba(20,38,58,.16)} body.lightmode #nav i.on{background:var(--teal)}
+#fps{position:absolute;right:10px;top:8px;font-size:11px;opacity:.55;z-index:9;display:none}
+#credit{position:absolute;right:14px;bottom:1.6vh;font-size:10.5px;opacity:.45;z-index:9;max-width:46vw;text-align:right}
+body.lightmode #credit{color:var(--ink)}
+#vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:20;display:none;background:var(--dark)}
+.tag{position:absolute;right:16px;top:10px;font-size:12px;color:var(--amber);letter-spacing:.12em;font-weight:700;z-index:9}
+</style></head>
+<body>
+<div id="map"></div>
+
+<section class="dark" data-s="title"><div class="hero-title">
+  <div class="kicker">Team A · hackathon 2026 · 3rd prize</div>
+  <h1>Every street has a direction. We filled in <span id="tN"></span> of them.</h1>
+  <p>Using two sources only: the road network itself and what Mapillary's street photos can see. Shown here on a simulated city.</p>
+</div></section>
+
+<section class="dark" data-s="data"><div class="card pos-l">
+  <div class="kicker">What we start from</div>
+  <h2>Two sources, nothing else</h2>
+  <div class="row"><div><div class="big" id="dLinks"></div><div class="lbl">road links, with <span id="dTurn"></span> turn restrictions and <span id="dCond"></span> truck limits</div></div>
+  <div><div class="big" style="color:var(--amber)" id="dSigns"></div><div class="lbl">Mapillary sign detections, from <span id="dImgs"></span> street photos</div></div></div>
+</div></section>
+
+<section class="light" data-s="targets">
+  <div class="kicker">What we have to predict</div>
+  <h2 style="max-width:24ch">Four values, three files</h2>
+  <div class="flowgrid" style="grid-template-columns:repeat(4,1fr);max-width:1500px;align-items:stretch;gap:1.4vw">
+    <div class="box" style="border-color:var(--teal)"><h3 style="color:var(--teal)">1 · Direction of travel</h3><div class="big" style="font-size:clamp(30px,3vw,54px)" id="gN"></div>
+      <div class="it" style="display:block;margin-top:.5em">blank links. Each gets <b>F</b>, <b>T</b> or <b>B</b>: one-way away from its southern end, one-way towards it, or both ways.</div></div>
+    <div class="box"><h3>2 · Turn restrictions</h3><div class="big" style="font-size:clamp(30px,3vw,54px)">from → to</div>
+      <div class="it" style="display:block;margin-top:.5em">An ordered list of links: the one you come from first, then the one you may not enter.</div></div>
+    <div class="box"><h3>3 · Truck limit: type</h3><div class="big" style="font-size:clamp(30px,3vw,54px)">which link</div>
+      <div class="it" style="display:block;margin-top:.5em">Which links carry a HEIGHT, WEIGHT or NO TRUCKS restriction.</div></div>
+    <div class="box"><h3>4 · Truck limit: value</h3><div class="big" style="font-size:clamp(30px,3vw,54px)">cm / kg</div>
+      <div class="it" style="display:block;margin-top:.5em">The number on the sign: height in centimetres, weight in kilograms.</div></div>
+  </div>
+  <p style="max-width:80ch;margin-top:3.5vh">Direction comes first. The other three depend on it: a turn only needs banning if it is legal, and a sign only governs the road it faces.</p>
+</section>
+
+<section class="dark" data-s="problem"><div class="card pos-l">
+  <div class="kicker">How the data is distributed</div>
+  <h2><span id="pMissPct"></span> of the network had no direction</h2>
+  <p>The lit zone is the answer key. Everywhere else, one-way or two-way was blanked out.</p>
+  <div class="row"><div><div class="big" id="pKnown"></div><div class="lbl">links with a known direction</div></div>
+  <div><div class="big teal" id="pMiss"></div><div class="lbl">links to predict</div></div></div>
+</div></section>
+
+<section class="dark" data-s="split"><div class="card pos-l">
+  <div class="kicker">How we test</div>
+  <h2>Hide a whole area, then predict it</h2>
+  <p>The known zone is cut into five areas. Each one is blanked in turn and predicted from the other four, exactly like the exam.</p>
+  <div class="chips"><span class="chip amber on" id="spChip"><i></i>area 1 of 5 hidden</span><span class="chip"><i></i>training on the rest</span></div>
+</div></section>
+
+<section class="dark" data-s="fuse"><div class="card pos-l">
+  <div class="kicker">Fusing the two sources</div>
+  <h2>Street signs, pinned to the network</h2>
+  <p>Every amber light is a one-way or no-entry sign that Mapillary saw, matched to the link it stands on.</p>
+  <div class="row"><div><div class="big" style="color:var(--amber)" id="fSigns"></div><div class="lbl">direction signs matched to a link</div></div>
+  <div><div class="big" id="fTrace"></div><div class="lbl">links with driving traces from photo sequences</div></div></div>
+</div></section>
+
+<section class="dark" data-s="hero">
+  <div class="card pos-tl fade" id="hHead" style="max-width:min(34vw,540px)"><div class="kicker">How a sign becomes a direction</div><h2 style="margin:0">One sign, one rule, one answer</h2></div>
+  <div class="card pos-r fade" id="hCard">
+    <img class="photo" id="hPhoto" alt="">
+    <div class="kv"><b>1 · What Mapillary saw</b><span id="hSign"></span></div>
+    <div class="kv"><b>2 · Which way it faces</b><span id="hFace"></span></div>
+    <div class="kv"><b>3 · The rule</b><span id="hRule"></span></div>
+    <div class="result"><div class="L" id="hRes"></div><div><div style="font-size:clamp(15px,1.25vw,21px);font-weight:700" id="hResT"></div>
+      <div class="lbl" style="max-width:none" id="hConfL"></div></div></div>
+  </div>
+</section>
+
+<section class="dark" data-s="see"><div class="card pos-l">
+  <div class="kicker">Reading the map</div>
+  <h2>Direction you can see</h2>
+  <div class="legend">
+    <div><span class="sw flow"></span>One-way: light flows the way you may drive</div>
+    <div><span class="sw pulse"></span>Two-way: a calm pulse</div>
+    <div><span class="sw off"></span>Unknown: dark</div>
+  </div>
+  <p style="margin-top:.8em"><span id="sOne"></span> of the known links are one-way. Guessing “two-way” everywhere gets those wrong.</p>
+</div></section>
+
+<section class="dark" data-s="lights"><div class="card pos-tl">
+  <div class="kicker">Predicting the blank zone</div>
+  <h2>The city lights up</h2>
+  <div class="row" style="margin-top:.3em"><div><div class="big teal" id="lCount">0</div><div class="lbl">of <span id="lTot"></span> blank links resolved</div></div></div>
+  <div class="chips"><span class="chip amber" id="st1"><i></i>Mapillary signs</span><span class="chip amber" id="st2"><i></i>Driving traces</span><span class="chip teal" id="st3"><i></i>Network logic</span></div>
+  <p class="fade" id="lRest" style="margin-top:1em;font-size:clamp(13px,1.05vw,18px)"></p>
+</div></section>
+
+<section class="light" data-s="start">
+  <div class="kicker">How we started</div>
+  <h2 style="max-width:22ch">We started simple, and stalled below 80%</h2>
+  <div class="row" style="gap:5vw;margin-top:3vh">
+    <div><div class="big" style="opacity:.45" id="aAllB"></div><div class="lbl" style="max-width:26ch">answering “two-way” for everything.</div></div>
+    <div><div class="big" style="color:var(--red)" id="aRand"></div><div class="lbl" style="max-width:26ch">first model on the links' own attributes, random 70/30 split.</div></div>
+    <div><div class="big teal" id="aSpat"></div><div class="lbl" style="max-width:26ch">same model, whole areas hidden: how the exam really looks.</div></div>
+  </div>
+  <p style="max-width:70ch;margin-top:4vh">Road class, length and shape tell you <b>that</b> a street is probably one-way, never <b>which way</b>. So we tested on hidden areas, like the exam, and went looking for evidence from the street itself.</p>
+</section>
+
+<section class="light" data-s="proof">
+  <div class="kicker">Step by step</div>
+  <div class="split"><div><h2 style="max-width:18ch">Each idea had to earn its place</h2></div>
+  <div><div class="big teal" id="bBig"></div><div class="lbl" style="max-width:32ch">of the <span id="bN"></span> blank links right, scored against the answer key</div></div></div>
+  <div class="bars" id="bars"></div>
+  <p class="note" style="max-width:95ch">Every row: trained on the known zone, then the whole blank zone predicted and scored against the answer key. Share of links whose direction (F, T or B) is exactly right. Bars start at zero.</p>
+</section>
+
+<section class="dark" data-s="restrict"><div class="card pos-l" style="max-width:min(34vw,540px)">
+  <div class="kicker">The other two targets</div>
+  <h2 id="rT"></h2><p id="rP"></p>
+  <div class="chips"><span class="chip red"><i></i>restriction</span><span class="chip"><i></i>allowed</span></div>
+</div></section>
+
+<section class="light" data-s="models">
+  <div class="kicker">What we finalised</div>
+  <h2 style="max-width:26ch">One method per target, each chosen on hidden areas</h2>
+  <div class="tw2"><table class="lb">
+    <thead><tr><th>Target</th><th>Final method</th><th>Score on the blank zone</th><th>Tried and dropped</th></tr></thead>
+    <tbody>
+    <tr class="win"><td><b>Direction of travel</b></td>
+      <td><b>Two-stage LightGBM</b>: is it one-way, then which way. Fed by Mapillary signs, drive-through photo sequences, a dual-carriageway rule, <b>graph features</b> 1 and 2 hops along the street, and <b>collective classification</b> (neighbours' predictions fed back, 2 rounds).<br>Then a <b>flow-consistency solver</b> (mixed-integer program): every junction needs a way in and a way out, twin carriageways run opposite, direction carries through 2-link nodes. All soft penalties.</td>
+      <td><span class="num" id="mDir"></span><br><span class="sub">one-way precision <span id="mP"></span>, recall <span id="mR"></span>, F-vs-T <span id="mFT"></span></span></td>
+      <td>Road side of signs and markings (no gain) · hard rules instead of penalties · a bigger LightGBM · more feedback rounds</td></tr>
+    <tr><td><b>Turn restrictions</b></td>
+      <td><b>LightGBM turn classifier</b>: one row per possible turn at every junction, with geometry, Mapillary signs, lane arrows and traffic lights. Keep turns scoring above 0.7. <b>Exit rule</b>: a ban may never remove the last legal exit.</td>
+      <td><span class="num" id="mTurn"></span><br><span class="sub"><span id="mRdmTp"></span> predictions right, F1 <span id="mRdmF"></span></span></td>
+      <td>Reading ban signs directly (almost never matches) · geometry without Mapillary</td></tr>
+    <tr><td><b>Truck limits</b></td>
+      <td><b>Rules, no learned model</b>: a Mapillary weight sign is assigned to the link it faces; the value is the most common one in the given rows.</td>
+      <td><span class="num" id="mCond"></span><br><span class="sub">new rows exactly right, <span id="mCondV"></span></span></td>
+      <td>HEIGHT and NO TRUCKS rows (too many false alarms) · fixed default values</td></tr>
+    </tbody></table></div>
+</section>
+
+<section class="light" data-s="final">
+  <div class="kicker">What we submitted, and why</div>
+  <h2 style="max-width:24ch">One model scales. The combined chain scores higher.</h2>
+  <div class="flowgrid" style="grid-template-columns:1fr 1fr;max-width:1300px;align-items:stretch;gap:2vw">
+    <div class="box"><h3>Unified: the direction model alone</h3><div class="big" id="uAcc" style="font-size:clamp(34px,3.6vw,64px);opacity:.55"></div>
+      <div class="it" style="display:block;margin-top:.6em">Simplest to run on a new city. A city this size takes under half a minute on one core:</div><ul id="uTime" style="margin-top:.5em"></ul></div>
+    <div class="box" style="border-color:var(--teal);box-shadow:0 10px 40px rgba(14,140,127,.16)"><h3 style="color:var(--teal)">Combined: submitted</h3><div class="big teal" id="cAcc" style="font-size:clamp(34px,3.6vw,64px)"></div>
+      <ul style="margin-top:.6em"><li><i></i>Two-stage LightGBM direction model on network + Mapillary</li><li><i></i>Flow-consistency solver on its probabilities</li><li><i></i>LightGBM turn classifier, using those directions</li><li><i></i>Truck-limit rules from weight signs</li></ul></div>
+  </div>
+</section>
+
+<section class="dark" data-s="finale"><div class="hero-title" style="top:auto;bottom:9vh;transform:none">
+  <div class="kicker">Result</div>
+  <h1 style="max-width:14ch">A city that flows again</h1>
+  <div class="row"><div><div class="big teal" id="fFilled">0</div><div class="lbl">directions predicted</div></div>
+  <div><div class="big" id="fTurn">0</div><div class="lbl">new turn restrictions</div></div>
+  <div><div class="big" id="fCond">0</div><div class="lbl">new truck limits</div></div>
+  <div><div class="big teal" id="fAcc">0</div><div class="lbl">right on the blank zone</div></div></div>
+</div></section>
+
+<section class="dark" data-s="qa"><div class="hero-title">
+  <div class="kicker">Team A</div>
+  <h1>Questions?</h1>
+  <p>Network + Mapillary only · tested on hidden areas · every number is in <code>results/</code>.</p>
+</div></section>
+
+<div id="nav"></div><div id="fps"></div>
+<div id="credit">Simulated data · map data © OpenStreetMap contributors (ODbL) · street-level evidence © Mapillary (CC BY-SA)</div>
+<video id="vid" src="video/hero.webm" muted playsinline></video>
+
+<script>
+const D=window.DECK,S=D.stats,C={dark:'#0B1F33',light:'#F4F7F9',ink:'#14263A',line:'#DCE4EA',teal:'#0E8C7F',amber:'#F5A623',red:'#D9472B'};
+const $=id=>document.getElementById(id),fmt=n=>Math.round(n).toLocaleString('en-US'),pct=(x,d=1)=>(100*x).toFixed(d)+'%';
+{const t=document.createElement('div');t.className='tag';t.textContent='SIMULATED DATA · 100% STUNT DOUBLE';document.body.appendChild(t);}
+const map=new maplibregl.Map({container:'map',attributionControl:false,maxPitch:75,antialias:true,fadeDuration:0,
+  style:{version:8,transition:{duration:0,delay:0},sources:{},layers:[{id:'bg',type:'background',paint:{'background-color':C.dark}}]},
+  bounds:D.bounds,fitBoundsOptions:{padding:70}});
+const W=m=>['interpolate',['linear'],['zoom'],10,['*',m,['match',['get','fc'],1,1.5,2,1.3,3,1.0,4,.7,.42]],
+  14,['*',m,['match',['get','fc'],1,2.8,2,2.5,3,2.1,4,1.6,1.15]],17.5,['*',m,['match',['get','fc'],1,8,2,7,3,6,4,5,3.6]]];
+const ONE=['in',['get','d'],['literal',['F','T']]],TWO=['==',['get','d'],'B'];
+const fc=f=>({type:'FeatureCollection',features:f}),line=(c,p)=>({type:'Feature',properties:p||{},geometry:{type:'LineString',coordinates:c}}),
+  poly=(c,p)=>({type:'Feature',properties:p||{},geometry:{type:'Polygon',coordinates:[c]}}),pt=(c,p)=>({type:'Feature',properties:p||{},geometry:{type:'Point',coordinates:c}});
+const src=(id,data,o)=>map.addSource(id,Object.assign({type:'geojson',data:data||fc([])},o||{})),set=(id,data)=>map.getSource(id).setData(data);
+let quality=2,lit=['==',['get','k'],1],markers=[];
+
+map.on('load',()=>{
+  src('links',D.links,{maxzoom:15,tolerance:.2,buffer:64});
+  map.addLayer({id:'dim',type:'line',source:'links',layout:{'line-cap':'round'},paint:{'line-color':C.line,'line-opacity':.11,'line-width':W(1)}});
+  map.addLayer({id:'two',type:'line',source:'links',layout:{'line-cap':'round'},paint:{'line-color':C.teal,'line-opacity':.42,'line-width':W(1)}});
+  map.addLayer({id:'glow',type:'line',source:'links',layout:{'line-cap':'round'},paint:{'line-color':C.teal,'line-opacity':.34,'line-width':W(3.4),'line-blur':6}});
+  map.addLayer({id:'one',type:'line',source:'links',layout:{'line-cap':'round'},paint:{'line-color':C.teal,'line-opacity':.95,'line-width':W(1.15)}});
+  map.addLayer({id:'flow',type:'line',source:'links',paint:{'line-color':C.light,'line-opacity':['interpolate',['linear'],['zoom'],10,.55,13,.9],'line-width':['interpolate',['linear'],['zoom'],10,['match',['get','fc'],1,1.1,2,1,.7],14,['match',['get','fc'],1,2.4,2,2.2,3,1.9,1.4],17.5,['match',['get','fc'],1,5,2,4.5,3.4]],'line-dasharray':[0,2,1.3,8]}});
+  map.addLayer({id:'front',type:'line',source:'links',layout:{'line-cap':'round'},filter:['==',['get','k'],9],paint:{'line-color':C.amber,'line-opacity':.95,'line-width':W(2.2),'line-blur':1.5}});
+  // restrictions overview
+  src('rpts',fc([...D.cond_pts.map(c=>pt(c,{t:'c'})),...D.turnban_pts.map(c=>pt(c,{t:'r'}))]));
+  map.addLayer({id:'rpts-g',type:'circle',source:'rpts',layout:{visibility:'none'},paint:{'circle-color':C.red,'circle-radius':9,'circle-blur':1,'circle-opacity':.6}});
+  map.addLayer({id:'rpts',type:'circle',source:'rpts',layout:{visibility:'none'},paint:{'circle-color':C.red,'circle-radius':3.2,'circle-stroke-color':C.light,'circle-stroke-width':.8}});
+  // hero + object layers
+  src('signs',fc((D.signs||[]).map(c=>pt(c))));
+  map.addLayer({id:'signs-g',type:'circle',source:'signs',layout:{visibility:'none'},paint:{'circle-color':C.amber,'circle-radius':['interpolate',['linear'],['zoom'],10,3.5,15,14],'circle-blur':1,'circle-opacity':.55}});
+  map.addLayer({id:'signs',type:'circle',source:'signs',layout:{visibility:'none'},paint:{'circle-color':C.amber,'circle-radius':['interpolate',['linear'],['zoom'],10,1.1,15,4],'circle-opacity':.95}});
+  src('bld',D.hero&&D.hero.buildings||fc([]));
+  map.addLayer({id:'bld',type:'fill-extrusion',source:'bld',layout:{visibility:'none'},paint:{'fill-extrusion-color':C.ink,'fill-extrusion-height':['get','h'],'fill-extrusion-opacity':.92,'fill-extrusion-vertical-gradient':true}});
+  for(const id of ['hcone','hsnap','hglow','harrow','hhead','href','hsign','gate','ol','oglow','oline','oblock','ohead'])src(id);
+  map.addLayer({id:'hcone',type:'fill',source:'hcone',paint:{'fill-color':C.amber,'fill-opacity':.28}});
+  map.addLayer({id:'hsnap',type:'line',source:'hsnap',paint:{'line-color':C.amber,'line-width':2,'line-dasharray':[1.2,1.6]}});
+  map.addLayer({id:'hglow',type:'line',source:'harrow',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':C.teal,'line-width':26,'line-blur':16,'line-opacity':.75}});
+  map.addLayer({id:'harrow',type:'line',source:'harrow',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':C.light,'line-width':8}});
+  map.addLayer({id:'hhead',type:'fill',source:'hhead',paint:{'fill-color':C.light}});
+  map.addLayer({id:'href-g',type:'circle',source:'href',paint:{'circle-color':C.teal,'circle-radius':18,'circle-blur':.9,'circle-opacity':.8}});
+  map.addLayer({id:'href',type:'circle',source:'href',paint:{'circle-color':C.light,'circle-radius':5,'circle-stroke-color':C.teal,'circle-stroke-width':3}});
+  map.addLayer({id:'hsign-g',type:'circle',source:'hsign',paint:{'circle-color':C.amber,'circle-radius':22,'circle-blur':1,'circle-opacity':.7}});
+  map.addLayer({id:'hbeacon',type:'fill-extrusion',source:'hsign',filter:['==',['geometry-type'],'Polygon'],paint:{'fill-extrusion-color':C.amber,'fill-extrusion-height':16,'fill-extrusion-opacity':.95}});
+  map.addLayer({id:'ol',type:'line',source:'ol',layout:{'line-cap':'round'},paint:{'line-color':C.line,'line-width':5,'line-opacity':.5}});
+  map.addLayer({id:'oglow',type:'line',source:'oline',layout:{'line-cap':'round'},paint:{'line-color':['get','c'],'line-width':20,'line-blur':12,'line-opacity':.6}});
+  map.addLayer({id:'oline',type:'line',source:'oline',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','c'],'line-width':5.5}});
+  map.addLayer({id:'oblock',type:'line',source:'oblock',layout:{'line-cap':'round'},paint:{'line-color':C.red,'line-width':9}});
+  map.addLayer({id:'ohead',type:'fill',source:'ohead',paint:{'fill-color':C.teal}});
+  map.addLayer({id:'gate',type:'fill-extrusion',source:'gate',paint:{'fill-extrusion-color':C.red,'fill-extrusion-base':['get','b'],'fill-extrusion-height':['get','h'],'fill-extrusion-opacity':.96}});
+  setLit(lit);fill();go(+(location.hash.slice(1)||0));requestAnimationFrame(frame);
+});
+function setLit(f){lit=f;map.setFilter('two',['all',f,TWO]);for(const l of['glow','one','flow'])map.setFilter(l,['all',f,ONE]);}
+function vis(ids,on){for(const i of ids)if(map.getLayer(i))map.setLayoutProperty(i,'visibility',on?'visible':'none');}
+function clearObjects(){for(const id of ['hcone','hsnap','harrow','hhead','href','hsign','gate','ol','oline','oblock','ohead'])set(id,fc([]));markers.forEach(m=>m.remove());markers=[];}
+function chip(lnglat,text,cls,off){const e=document.createElement('div');e.className='mk '+(cls||'');e.textContent=text;markers.push(new maplibregl.Marker({element:e,anchor:'bottom',offset:off||[0,-26]}).setLngLat(lnglat).addTo(map));}
+
+/* ---------- static text from the numbers ---------- */
+function fill(){const R=S.R;
+  $('tN').textContent=fmt(S.missing);$('dLinks').textContent=fmt(S.links);$('dTurn').textContent=fmt(R.turnban.given);$('dCond').textContent=R.cond.given;
+  $('dSigns').textContent=fmt(S.mly_signs);$('dImgs').textContent=(S.mly_images/1e6).toFixed(1)+' million';
+  $('pMissPct').textContent=pct(S.missing/S.links,0);$('pKnown').textContent=fmt(S.known);$('pMiss').textContent=fmt(S.missing);
+  $('fSigns').textContent=fmt(S.n_dir_signs);$('fTrace').textContent=fmt(S.n_trace_links);
+  $('sOne').textContent=pct(S.oneway_known,0);$('lTot').textContent=fmt(S.missing);
+  $('aRand').textContent=pct(R.random_attr);$('aSpat').textContent=pct(R.spatial_attr);$('aAllB').textContent=pct(R.allb_real);
+  $('bBig').textContent=pct(R.real_final);$('bN').textContent=fmt(R.real_n);
+  $('bars').innerHTML=R.ladder.map((b,i)=>`<div class="bar five ${i===0?'base':i===R.ladder.length-1?'win':''}"><div>${b[0]}</div><div class="t"><b data-w="${b[1]*100}"></b></div><div class="v">${pct(b[1])}</div></div>`).join('');
+  
+  $('gN').textContent=fmt(S.missing);$('mDir').textContent=pct(R.real_final);$('mP').textContent=pct(R.real_p);$('mR').textContent=pct(R.real_r);$('mFT').textContent=pct(R.real_ft);$('mTurn').textContent=pct(R.turnban.p,0);$('mRdmTp').textContent=R.turnban.tp+' of '+R.turnban.pred;$('mRdmF').textContent=R.turnban.f1.toFixed(2);$('mCond').textContent=R.cond.found+' of '+R.cond.of;$('mCondV').textContent='F1 '+R.cond.f1;$('uAcc').textContent=pct(R.real_model,2);$('cAcc').textContent=pct(R.real_final,2);
+  $('uTime').innerHTML=R.timing.map(x=>`<li class="g"><i></i>${x[0]}: ${x[1]} s</li>`).join('');
+  const h=D.hero;if(h){
+    const kind=h.sign_value.includes('no-entry')?'No-entry sign':'One-way sign';
+    if(h.photo)$('hPhoto').src=h.photo;else $('hPhoto').style.display='none';
+    $('hSign').textContent=`${kind}, detected in ${h.n_images} street photos`+(h.photo_year?` (this one: ${h.photo_year})`:'');
+    $('hFace').textContent='The cameras that saw it were all driving into this link, so the sign belongs to this street, not the cross street.';
+    $('hRule').textContent=`No entry at the ${h.end==='ref'?'southern':'northern'} end, so traffic flows towards that end.`;
+    $('hRes').textContent=h.result;$('hResT').textContent=h.result==='F'?'One-way, away from the southern end':'One-way, towards the southern end';
+    $('hConfL').textContent='the model says the same, and so does the answer key';
+  }
+}
+/* ---------- scenes ---------- */
+const order=['title','data','targets','problem','split','fuse','hero','see','lights','start','proof','restrict','models','final','finale','qa'].filter(s=>s!=='hero'||D.hero);
+let cur=-1,step=0,t0=0,orbit=0,timers=[];
+const KNOWN=['==',['get','k'],1],ALL=['has','d'];
+const later=(ms,f)=>timers.push(setTimeout(f,ms));
+const Z0={top:0,right:0,bottom:0,left:0};const fly=o=>{map.setPadding(Z0);map.flyTo(o);};
+const fitAll=(o)=>{map.setPadding(Z0);o=Object.assign({padding:70,duration:2600,pitch:0,bearing:0,boost:0},o||{});const c=map.cameraForBounds(D.bounds,{padding:o.padding});map.flyTo({center:c.center,zoom:c.zoom+o.boost,pitch:o.pitch,bearing:o.bearing,duration:o.duration,padding:typeof o.padding==='number'?o.padding:o.padding,essential:true});};
+const SC={
+ title(){setLit(ALL);fitAll({pitch:50,bearing:-18,boost:.45,padding:{top:20,bottom:20,left:Math.round(innerWidth*.47),right:10}});orbit=1.4;},
+ problem(){setLit(KNOWN);fitAll({padding:{top:60,bottom:60,left:Math.round(innerWidth*.36),right:60}});},
+ see(){setLit(KNOWN);const c=knownCenter();fly({center:c,zoom:15.3,pitch:38,bearing:20,duration:3200,padding:{left:Math.round(innerWidth*.3),top:0,right:0,bottom:0}});orbit=1.1;},
+ data(){setLit(KNOWN);fitAll({padding:{top:60,bottom:60,left:Math.round(innerWidth*.40),right:50}});},
+ split(){fitAll({padding:{top:60,bottom:60,left:Math.round(innerWidth*.40),right:50}});spB=-1;spNext=performance.now()+600;},
+ fuse(){setLit(ALL);vis(['signs','signs-g'],true);const c=knownCenter();fitAll({duration:1200,padding:{top:60,bottom:60,left:Math.round(innerWidth*.40),right:50}});
+   later(3800,()=>{fly({center:(D.hero&&D.hero.center)||c,zoom:15.2,pitch:55,bearing:-30,duration:7000,padding:{left:Math.round(innerWidth*.3),top:0,right:0,bottom:0}});});later(11000,()=>{orbit=1.6;});},
+ start(){},targets(){},models(){},final(){},
+ qa(){setLit(ALL);fitAll({pitch:52,bearing:10,boost:.5,duration:4000,padding:{top:20,bottom:20,left:Math.round(innerWidth*.40),right:10}});orbit=1.6;},
+ lights(){setLit(KNOWN);fitAll({padding:{top:50,bottom:50,left:Math.round(innerWidth*.40),right:40}});lstep=-1;lTarget=0;lShown=0;lNext=performance.now()+2600;
+   ['st1','st2','st3'].forEach(i=>$(i).classList.remove('on'));$('lRest').classList.remove('in');$('lCount').textContent='0';},
+ hero(){setLit(ALL);const h=D.hero;vis(['bld'],true);$('hHead').classList.add('in');
+   fly({center:h.center,zoom:17.6,pitch:62,bearing:h.bearing-70,duration:6500,curve:1.5,essential:true,padding:{right:Math.round(innerWidth*.26),left:0,top:0,bottom:0}});
+   later(6600,()=>{orbit=2.6;});
+   later(5200,()=>{set('hsign',fc([pt(h.sign),poly(h.column)]));set('hcone',fc([poly(h.cone)]));chip(h.sign,(h.sign_value.includes('no-entry')?'No entry':'One-way')+' · Mapillary','amber',[0,-64]);});
+   later(6800,()=>set('hsnap',fc([line([h.sign,h.snap])])));
+   later(7800,()=>{set('href',fc([pt(h.ref)]));chip(h.ref,'southern end','teal',[0,52]);});
+   later(8900,()=>{arrowT=performance.now();});
+   later(11400,()=>{$('hCard').classList.add('in');});},
+ proof(){later(500,()=>document.querySelectorAll('#bars b').forEach(b=>b.style.width=b.dataset.w+'%'));},
+ restrict(){setLit(ALL);restrictStep();},
+ finale(){setLit(ALL);vis(['rpts','rpts-g'],true);fitAll({pitch:48,bearing:24,duration:5200,boost:.75,padding:{top:10,bottom:Math.round(innerHeight*.36),left:40,right:40}});orbit=1.5;countT=performance.now()+900;}
+};
+function restrictStep(){clearObjects();orbit=0;
+  const two=D.cond&&D.turnban,s=(!D.cond)?1:(!D.turnban?0:step);
+  if(s===0&&D.cond){const c=D.cond;$('rT').textContent='A truck limit is a gate across the road';
+    $('rP').textContent=`We add ${S.R.cond.new} truck limits from weight signs in street photos. Against the answer key, ${S.R.cond.found} of them are exactly right. Only ${S.R.cond.given} examples were given, so this is the hardest target.`;
+    set('ol',fc([line(c.link)]));set('gate',fc([poly(c.bar,{b:Math.max(c.clear-.5,2.4),h:c.clear+.2}),...c.posts.map(p=>poly(p,{b:0,h:c.clear+.2}))]));
+    fly({center:c.center,zoom:19.3,pitch:58,bearing:c.bearing+34,duration:4200,padding:{left:Math.round(innerWidth*.3),top:0,right:0,bottom:0}});
+    later(3600,()=>{chip(c.center,(c.type==='HEIGHT'?'max height ':c.type==='WEIGHT'?'max weight ':'')+c.label,'red',[0,-120]);orbit=2.2;});}
+  else if(D.turnban){const r=D.turnban;$('rT').textContent='A forbidden turn is a blocked arc';
+    $('rP').textContent=`We add ${S.R.turnban.new} turn restrictions, each an ordered list: the link you come from first, then the link you may not enter. A model that scores every possible turn got ${S.R.turnban.tp} of ${S.R.turnban.pred} exactly right against the answer key. Reading ban signs alone got almost none.`;
+    set('ol',fc([line(r.from_link),line(r.to_link),...r.others.map(o=>line(o))]));
+    set('oline',fc([...r.allowed.map(a=>line(a.line,{c:C.teal})),line(r.forbidden,{c:C.red})]));set('ohead',fc(r.allowed.map(a=>poly(a.head))));set('oblock',fc([line(r.block)]));
+    fly({center:r.center,zoom:19.4,pitch:42,bearing:r.bearing-25,duration:4200,padding:{left:Math.round(innerWidth*.3),top:0,right:0,bottom:0}});
+    later(3600,()=>{chip(r.block[0],'blocked','red',[0,-46]);orbit=1.8;});}
+}
+function knownCenter(){let x=0,y=0,n=0;for(const f of D.links.features){const p=f.properties;if(p.k===1&&p.d!=='B'){const c=f.geometry.coordinates[0];x+=c[0];y+=c[1];n++;}}
+  if(!n)return map.getCenter();const cx=x/n,cy=y/n;let best=null,bd=1e9;for(const f of D.links.features){const p=f.properties;if(p.k===1&&p.d!=='B'){const c=f.geometry.coordinates[0],d=(c[0]-cx)**2+(c[1]-cy)**2;if(d<bd){bd=d;best=c;}}}return best;}
+function steps(name){return name==='restrict'&&D.cond&&D.turnban?2:1;}
+function go(i){i=Math.max(0,Math.min(order.length-1,i));if(i===cur)return;timers.forEach(clearTimeout);timers=[];cur=i;step=0;orbit=0;arrowT=0;countT=0;lNext=0;spNext=0;
+  clearObjects();vis(['bld','rpts','rpts-g','signs','signs-g'],false);map.setFilter('front',['==',['get','k'],9]);
+  document.querySelectorAll('.fade').forEach(e=>e.classList.remove('in'));document.querySelectorAll('#bars b').forEach(b=>b.style.width=0);
+  const name=order[i];document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.dataset.s===name));
+  document.body.classList.toggle('lightmode',document.querySelector(`section[data-s="${name}"]`).classList.contains('light'));
+  $('nav').innerHTML=order.map((_,k)=>`<i class="${k===i?'on':''}" onclick="go(${k})"></i>`).join('');
+  history.replaceState(null,'','#'+i);$('vid').style.display='none';$('vid').pause();SC[name]();}
+function next(){const n=order[cur];if(step<steps(n)-1){step++;timers.forEach(clearTimeout);timers=[];restrictStep();}else go(cur+1);}
+function prev(){if(step>0){step--;timers.forEach(clearTimeout);timers=[];restrictStep();}else go(cur-1);}
+addEventListener('keydown',e=>{if(['ArrowRight',' ','PageDown','Enter'].includes(e.key)){e.preventDefault();next();}else if(['ArrowLeft','PageUp'].includes(e.key))prev();
+  else if(e.key==='f')$('fps').style.display=$('fps').style.display==='block'?'none':'block';
+  else if(e.key==='v'&&order[cur]==='hero'){const v=$('vid');if(v.style.display==='block'){v.style.display='none';v.pause();}else{v.style.display='block';v.currentTime=0;v.play();}}
+  });
+
+/* ---------- animation loop ---------- */
+const P=11,DL=1.3,NS=44;   // dash period, dash length (line widths), steps per period
+function dash(k){const o=(k%NS)/NS*P,g=P-DL;return o<=g?[0,o,DL,g-o]:[o-g,g,DL-(o-g)];}
+let last=performance.now(),acc=0,k=0,fpsN=0,fpsT=last,fps=60,low=0,pulseT=0,lstep=-1,lTarget=0,lShown=0,lNext=0,arrowT=0,countT=0,spB=-1,spNext=0;
+const STAGE_MS=4600,PAUSE=900;
+function cut(c,f){const kx=Math.cos(c[0][1]*Math.PI/180);let seg=[],tot=0;for(let i=1;i<c.length;i++){const l=Math.hypot((c[i][0]-c[i-1][0])*kx,c[i][1]-c[i-1][1]);seg.push(l);tot+=l;}
+  let tg=tot*f,a=0,out=[c[0]];for(let i=1;i<c.length;i++){if(a+seg[i-1]>=tg||i===c.length-1){const t=seg[i-1]?Math.min(1,(tg-a)/seg[i-1]):1;
+    const p=[c[i-1][0]+(c[i][0]-c[i-1][0])*t,c[i-1][1]+(c[i][1]-c[i-1][1])*t];out.push(p);let ux=(c[i][0]-c[i-1][0])*kx,uy=c[i][1]-c[i-1][1];const n=Math.hypot(ux,uy)||1;return{line:out,tip:p,u:[ux/n,uy/n],kx};}
+    out.push(c[i]);a+=seg[i-1];}}
+function headPoly(tip,u,kx,m){const s=m/111320,nx=-u[1],ny=u[0],P2=(a,b)=>[tip[0]+(u[0]*a+nx*b)*s/kx,tip[1]+(u[1]*a+ny*b)*s];return[P2(1.5,0),P2(-.6,1),P2(-.6,-1),P2(1.5,0)];}
+function frame(now){const dt=Math.min(100,now-last);last=now;requestAnimationFrame(frame);
+  fpsN++;if(now-fpsT>1000){fps=fpsN*1000/(now-fpsT);fpsN=0;fpsT=now;$('fps').textContent=fps.toFixed(0)+' fps · q'+quality;
+    if(fps<27){if(++low>=3&&quality>0){quality--;low=0;if(quality===1)vis(['glow'],false);}}else low=0;}
+  if(!map.isStyleLoaded()&&!map.getLayer('flow'))return;
+  acc+=dt;const tick=quality===2?32:quality===1?55:90;
+  if(acc>=tick){acc=0;k++;map.setPaintProperty('flow','line-dasharray',dash(k));}
+  if(quality>0&&now-pulseT>90){pulseT=now;map.setPaintProperty('two','line-opacity',.36+.16*Math.sin(now/1100));}
+  if(orbit&&!map.isMoving())map.setBearing(map.getBearing()+orbit*dt/1000);
+  const name=order[cur];
+  if(name==='lights'){
+    if(lNext&&now>=lNext){lstep++;
+      if(lstep>=30){map.setFilter('front',['==',['get','k'],9]);['st1','st2','st3'].forEach(id=>$(id).classList.remove('on'));
+        $('lRest').textContent=`Signs and traces touch ${fmt(S.stage_counts[0]+S.stage_counts[1])} blank links directly. The rest is inferred from neighbours along the street and from junctions that need a way in and a way out.`;$('lRest').classList.add('in');lNext=0;}
+      else{const s=Math.floor(lstep/10),p=s+(lstep%10+1)/10;setLit(['<',['get','ig'],p]);
+        map.setPaintProperty('front','line-color',s===2?C.light:C.amber);map.setFilter('front',['all',['>=',['get','ig'],p-.1],['<',['get','ig'],p]]);
+        let lo=0,hi=D.ig_sorted.length;while(lo<hi){const m=(lo+hi)>>1;D.ig_sorted[m]<p?lo=m+1:hi=m;}lTarget=lo;
+        ['st1','st2','st3'].forEach((id,i)=>$(id).classList.toggle('on',i===s));lNext=now+(lstep%10===9?1300:s===2?560:330);}}
+    lShown+=(lTarget-lShown)*Math.min(1,dt/220);$('lCount').textContent=fmt(lShown);}
+  if(name==='split'&&spNext&&now>=spNext){spB=(spB+1)%5;spNext=now+1900;setLit(['all',KNOWN,['!=',['get','b'],spB]]);
+    map.setPaintProperty('front','line-color',C.amber);map.setFilter('front',['all',KNOWN,['==',['get','b'],spB]]);$('spChip').innerHTML=`<i></i>area ${spB+1} of 5 hidden`;}
+  if(name==='hero'&&arrowT){const f=Math.min(1,(now-arrowT)/2400),e=f<.5?2*f*f:1-2*(1-f)*(1-f),c=cut(D.hero.link,Math.max(.02,e*.94));
+    set('harrow',fc([line(c.line)]));set('hhead',fc([poly(headPoly(c.tip,c.u,c.kx,11))]));if(f>=1)arrowT=0;}
+  if(name==='hero'||name==='restrict'){const r=1+.25*Math.sin(now/260);if(map.getLayer('href-g')){map.setPaintProperty('href-g','circle-radius',18*r);map.setPaintProperty('hsign-g','circle-radius',22*r);}}
+  if(name==='finale'&&countT&&now>countT){const f=Math.min(1,(now-countT)/2200),e=1-Math.pow(1-f,3);
+    $('fFilled').textContent=fmt(S.missing*e);$('fTurn').textContent=fmt(S.R.turnban.new*e);$('fCond').textContent=fmt(S.R.cond.new*e);$('fAcc').textContent=pct(S.R.real_final*e);if(f>=1)countT=0;}
+}
+window.deck={go,next,prev,get fps(){return fps},get quality(){return quality},order};
+</script>
+</body></html>

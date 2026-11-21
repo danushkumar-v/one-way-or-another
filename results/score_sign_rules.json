@@ -1,0 +1,47 @@
+{
+  "direction": {
+    "links_to_predict": 18040,
+    "answered": 18040,
+    "accuracy": 0.8267,
+    "baseline_all_B": 0.6761,
+    "class_B": {
+      "precision": 0.8127,
+      "recall": 0.9734,
+      "f1": 0.8858,
+      "tp": 11871,
+      "predicted": 14607,
+      "truth": 12196
+    },
+    "class_F": {
+      "precision": 0.889,
+      "recall": 0.5324,
+      "f1": 0.6659,
+      "tp": 1538,
+      "predicted": 1730,
+      "truth": 2889
+    },
+    "class_T": {
+      "precision": 0.8831,
+      "recall": 0.509,
+      "f1": 0.6458,
+      "tp": 1504,
+      "predicted": 1703,
+      "truth": 2955
+    },
+    "macro_f1": 0.7325,
+    "oneway_detection": {
+      "precision": 0.9053,
+      "recall": 0.5318,
+      "f1": 0.67,
+      "tp": 3108,
+      "predicted": 3433,
+      "truth": 5844
+    },
+    "direction_given_oneway_found": {
+      "n": 3108,
+      "accuracy": 0.9788
+    }
+  },
+  "truck_limits": "skipped (no file)",
+  "turn_bans": "skipped (no file)"
+}
