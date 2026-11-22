@@ -200,10 +200,12 @@ one-way-or-another/
 <tr>
 <td align="center" width="25%"><a href="https://github.com/danushkumar-v"><img src="https://github.com/danushkumar-v.png?size=120" width="96" alt=""><br><b>Danush Venkadesh</b></a><br><sub>data, evaluation, the deck</sub></td>
 <td align="center" width="25%"><a href="https://github.com/sibi15"><img src="https://github.com/sibi15.png?size=120" width="96" alt=""><br><b>Sibi Karthik C V</b></a><br><sub>models, flow solver, turn restrictions</sub></td>
-<td align="center" width="25%"><a href="https://github.com/Hemavarshika"><img src="https://github.com/Hemavarshika.png?size=120" width="96" alt=""><br><b>Hemavarshika Velumani</b></a><br><sub>co-author</sub></td>
-<td align="center" width="25%"><a href="https://github.com/KSSRUTHI"><img src="https://github.com/KSSRUTHI.png?size=120" width="96" alt=""><br><b>S.S.P. Kannan Selvam</b></a><br><sub>co-author</sub></td>
+<td align="center" width="25%"><a href="https://github.com/Hemavarshika"><img src="https://github.com/Hemavarshika.png?size=120" width="96" alt=""><br><b>Hemavarshika Velumani</b></a><br><sub>direction-distribution analysis, real-world traffic patterns, the dev plan</sub></td>
+<td align="center" width="25%"><a href="https://github.com/KSSRUTHI"><img src="https://github.com/KSSRUTHI.png?size=120" width="96" alt=""><br><b>S.S.P. Kannan Selvam</b></a><br><sub>direction-distribution analysis, real-world traffic patterns, the dev plan</sub></td>
 </tr>
 </table>
+
+All four of us brainstormed every idea together. Danush and Sibi wrote the core code. Hemavarshika and Kannan dug into how directions are distributed across the map and how traffic really behaves on the street, and that analysis shaped the plan the code followed.
 
 Thanks to the organisers, mentors and judges for a brilliant day, a hard problem, and a third prize we'll mention at every opportunity.
 
